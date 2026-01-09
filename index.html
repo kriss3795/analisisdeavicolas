@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría Avícola Universal V18</title>
+    <!-- Librerías -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        
+        /* Encabezados de Sección */
+        .section-header { 
+            background: linear-gradient(90deg, #1e3a8a 0%, #0f172a 100%); 
+            padding: 0.75rem 1rem; 
+            border-left: 4px solid #60a5fa; 
+            margin-top: 2rem; 
+            border-radius: 4px;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #bfdbfe;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        /* Tarjetas de Preguntas */
+        .card { 
+            background-color: #1e293b; 
+            border: 1px solid #334155; 
+            padding: 1rem; 
+            border-radius: 8px; 
+            transition: all 0.2s;
+            position: relative;
+        }
+        .card:hover { border-color: #60a5fa; background-color: #243045; }
+
+        .unit-badge {
+            position: absolute; right: 12px; top: 12px; 
+            font-size: 0.65rem; background: #0f172a;
+            padding: 2px 6px; border-radius: 4px; color: #94a3b8; border: 1px solid #334155;
+        }
+
+        /* Inputs */
+        input[type="text"], input[type="number"], select {
+            background: #0f172a; border: 1px solid #475569; color: white; 
+            padding: 8px 10px; border-radius: 4px; width: 100%; 
+            font-family: monospace; font-size: 0.9rem; margin-top: 5px;
+        }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; ring: 1px solid #3b82f6; }
+
+        /* Semáforo Visual (Radio Buttons) */
+        .radio-group { display: grid; grid-template-columns: repeat(1, 1fr); gap: 4px; margin-top: 8px; }
+        @media (min-width: 768px) { .radio-group { grid-template-columns: repeat(3, 1fr); } }
+        
+        .radio-label { cursor: pointer; height: 100%; }
+        .radio-content {
+            border: 1px solid #475569; padding: 8px 2px; text-align: center;
+            border-radius: 4px; font-size: 0.7rem; color: #94a3b8;
+            height: 100%; display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s; background: #0f172a;
+        }
+        input:checked + .radio-content { color: white; border-color: white; font-weight: bold; transform: scale(1.02); }
+        
+        /* Colores Lógicos */
+        input[data-type="critico"]:checked + .radio-content { background: #991b1b; border-color: #f87171; } /* Rojo */
+        input[data-type="malo"]:checked + .radio-content { background: #9a3412; } /* Naranja */
+        input[data-type="regular"]:checked + .radio-content { background: #a16207; } /* Amarillo */
+        input[data-type="bueno"]:checked + .radio-content { background: #166534; border-color: #4ade80; } /* Verde */
+        input[data-type="na"]:checked + .radio-content { background: #334155; } /* Gris */
+
+        /* Reporte Markdown */
+        .markdown-body { font-size: 0.95rem; line-height: 1.7; color: #cbd5e1; }
+        .markdown-body h1 { color: #60a5fa; border-bottom: 1px solid #334155; margin-top: 1em; font-size: 1.5em; font-weight: 800; }
+        .markdown-body h2 { color: #93c5fd; margin-top: 1.5em; font-size: 1.2em; font-weight: 700; }
+        .markdown-body strong { color: white; font-weight: 700; }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin: 15px 0; background: #172554; font-size: 0.9rem; }
+        .markdown-body th { background: #1e3a8a; color: white; padding: 10px; text-align: left; }
+        .markdown-body td { border: 1px solid #1e40af; padding: 8px; }
+    </style>
+</head>
+<body class="pb-32 bg-[#020617]">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 bg-[#0b1120] border-b border-indigo-900 shadow-xl px-4 py-3 backdrop-blur-md bg-opacity-90">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-blue-400 flex items-center gap-2">
+                    🧬 Auditoría Universal <span class="text-[10px] bg-blue-900 px-2 rounded text-blue-200 border border-blue-700">V18.0</span>
+                </h1>
+            </div>
+            <div class="flex gap-2 items-center bg-slate-900 p-1.5 rounded-lg border border-slate-700 w-full md:w-auto">
+                <input type="password" id="apiKey" class="bg-transparent border-none text-xs text-white w-24 md:w-48 focus:ring-0 placeholder-gray-500" value="AIzaSyCntsakgUWfy7jQFn_rNeYcVvg-X-V7uk0" placeholder="Pegar API Key">
+                <button onclick="testConnection()" id="btnTest" class="bg-slate-700 hover:bg-slate-600 text-[10px] text-white px-3 py-1 rounded font-bold whitespace-nowrap transition-colors">CONECTAR</button>
+                <div id="modelStatus" class="text-[10px] text-gray-500 font-mono w-3 h-3 rounded-full bg-gray-700"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Datos del Proyecto -->
+    <div class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="bg-slate-800/50 border border-slate-700 p-4 rounded-lg grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase font-bold">Nombre Predio</label>
+                <input type="text" id="project_name" placeholder="Ej: Avícola Avilán" class="font-bold text-white bg-slate-900 border-slate-600">
+            </div>
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase font-bold">Precio Venta (CLP)</label>
+                <input type="text" id="project_price" placeholder="$..." class="text-emerald-400 font-mono bg-slate-900 border-slate-600">
+            </div>
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase font-bold">Hectáreas</label>
+                <input type="number" id="project_ha" placeholder="1" class="bg-slate-900 border-slate-600">
+            </div>
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase font-bold">Tenencia Tierra</label>
+                <select id="project_owner" class="bg-slate-900 border-slate-600 text-xs text-white cursor-pointer">
+                    <option value="Propio">Dueño (Rol Propio)</option>
+                    <option value="Sucesion">Sucesión (Riesgo)</option>
+                    <option value="Arriendo">Arriendo</option>
+                    <option value="Usufructo">Usufructo</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <main class="max-w-7xl mx-auto px-4" id="main-container"></main>
+    
+    <!-- Botón Agregar Ítem -->
+    <div class="max-w-7xl mx-auto px-4 mt-6 mb-8">
+        <button onclick="addCustomItem()" class="w-full border-2 border-dashed border-slate-700 text-slate-500 hover:text-blue-400 hover:border-blue-400 rounded-lg p-4 font-bold transition-all flex items-center justify-center gap-2 hover:bg-slate-900/50">
+            <span>+</span> AGREGAR OBSERVACIÓN EXTRA
+        </button>
+    </div>
+
+    <!-- Footer Flotante -->
+    <div class="fixed bottom-0 left-0 w-full bg-[#0b1120]/95 backdrop-blur border-t border-indigo-900/50 p-3 z-40">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="hidden md:flex gap-6 text-[10px] text-gray-400 font-mono uppercase tracking-widest">
+                <span>Datos: <b id="count-data" class="text-blue-400">0</b></span>
+                <span>Fotos: <b id="count-img" class="text-emerald-400">0</b></span>
+                <span>N/A: <b id="count-na" class="text-gray-500">0</b></span> <!-- Restored ID -->
+                <span id="video-indicator" class="hidden text-yellow-400 flex items-center gap-1"><span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span> VIDEO</span>
+            </div>
+            <div class="flex gap-3 w-full md:w-auto">
+                <button onclick="generarPDF()" class="flex-1 md:flex-none bg-slate-800 hover:bg-slate-700 text-gray-300 font-bold py-2 px-4 rounded text-xs border border-slate-600 flex items-center justify-center gap-2">
+                    <span>📄</span> CHECKLIST PDF
+                </button>
+                <button onclick="analizarConIA()" id="btnAnalyze" class="flex-1 md:flex-none bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 text-white font-bold py-2 px-8 rounded shadow-lg shadow-indigo-900/50 flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale transition-all transform active:scale-95" disabled>
+                    <span>⚡</span> AUDITAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reporte -->
+    <div id="modalReport" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-md overflow-y-auto p-2 md:p-6">
+        <div class="bg-slate-900 max-w-5xl mx-auto mt-4 rounded-xl border border-slate-700 shadow-2xl min-h-[85vh] flex flex-col relative">
+            <div class="flex justify-between items-center p-4 border-b border-slate-800 bg-slate-900 sticky top-0 rounded-t-xl z-10">
+                <div class="flex items-center gap-3">
+                    <button onclick="cerrarModal()" class="text-slate-400 hover:text-white bg-slate-800 border border-slate-700 px-3 py-1 rounded text-xs font-bold transition-colors">← VOLVER</button>
+                    <h3 class="text-indigo-400 font-bold text-sm hidden md:block uppercase tracking-wider">Informe Científico</h3>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportarReportePDF()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-1.5 rounded font-bold shadow-lg flex items-center gap-2 transition-all"><span>📥</span> GUARDAR PDF</button>
+                    <button onclick="cerrarModal()" class="text-gray-500 hover:text-white px-2 text-xl">✕</button>
+                </div>
+            </div>
+            
+            <div id="loader" class="hidden flex-1 flex flex-col items-center justify-center p-10">
+                <div class="relative w-16 h-16">
+                    <div class="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <p class="text-indigo-400 mt-6 text-sm font-mono animate-pulse uppercase tracking-widest" id="loaderText">Conectando...</p>
+                <div id="debugConsole" class="mt-6 bg-black p-3 rounded text-[10px] text-green-500 font-mono w-full max-w-lg h-32 overflow-y-auto border border-gray-800 opacity-90"></div>
+            </div>
+
+            <div id="reportContent" class="p-8 markdown-body hidden bg-[#0b1120]"></div>
+        </div>
+    </div>
+
+    <canvas id="videoCanvas" class="hidden"></canvas>
+
+    <script>
+        // --- 1. PROTOCOLO MAESTRO EXTENDIDO (V18) ---
+        const protocol = [
+            {
+                cat: "I. LEGALIDAD Y PERMISOS (CRÍTICO)",
+                items: [
+                    { id: "rup", q: "Rol Único Pecuario (RUP)", type: "radio", opts: [{v:"no", l:"NO TIENE", t:"critico"}, {v:"tramite", l:"En Trámite", t:"regular"}, {v:"si", l:"Vigente", t:"optimo"}] },
+                    { id: "pabco", q: "Certificación PABCO (SAG)", type: "radio", opts: [{v:"no", l:"No tiene", t:"malo"}, {v:"tramite", l:"En Proceso", t:"regular"}, {v:"si", l:"Certificado", t:"optimo"}] },
+                    { id: "res_salud", q: "Resolución Seremi Salud", type: "radio", opts: [{v:"no", l:"Clausurable", t:"critico"}, {v:"provisoria", l:"Provisoria", t:"regular"}, {v:"definitiva", l:"Definitiva", t:"optimo"}] },
+                    { id: "pozo_legal", q: "Inscripción DGA (Agua)", type: "radio", opts: [{v:"ilegal", l:"Pozo Negro", t:"critico"}, {v:"tramite", l:"Carpeta Ingresada", t:"regular"}, {v:"derechos", l:"Derechos OK", t:"optimo"}] },
+                    { id: "uso_suelo", q: "Uso de Suelo (SII/Muni)", type: "radio", opts: [{v:"habitacional", l:"Habitacional (Riesgo)", t:"critico"}, {v:"agricola", l:"Agrícola", t:"optimo"}, {v:"ns", l:"No Sabe", t:"regular"}] },
+                    { id: "multas", q: "Historial Multas/Sumarios", type: "radio", opts: [{v:"si_grave", l:"Sí, Graves", t:"critico"}, {v:"si_leve", l:"Sí, Leves", t:"malo"}, {v:"no", l:"Limpio", t:"optimo"}] }
+                ]
+            },
+            {
+                cat: "II. SANIDAD Y MANEJO DE MORTANDAD",
+                items: [
+                    { id: "fosa", q: "Fosa de Mortalidad", type: "radio", opts: [{v:"no", l:"No tiene (Ilegal)", t:"critico"}, {v:"saturada", l:"Llena/Saturada", t:"malo"}, {v:"ok", l:"Autorizada/Operativa", t:"optimo"}] },
+                    { id: "compost", q: "Manejo de Guano", type: "radio", opts: [{v:"acopio_mal", l:"Pila sin tapar (Moscas)", t:"critico"}, {v:"retiro", l:"Retiro externo", t:"regular"}, {v:"compostera", l:"Compostaje Tecnificado", t:"optimo"}] },
+                    { id: "vectores", q: "Control Plagas (Moscas/Ratones)", type: "radio", opts: [{v:"plaga", l:"Fuera de control", t:"critico"}, {v:"casero", l:"Control casero", t:"regular"}, {v:"empresa", l:"Empresa Externa", t:"optimo"}] },
+                    { id: "vacunas", q: "Registro Vacunas", type: "radio", opts: [{v:"no", l:"Sin registro", t:"critico"}, {v:"incompleto", l:"Incompleto", t:"malo"}, {v:"al_dia", l:"Al Día/Trazable", t:"optimo"}] }
+                ]
+            },
+            {
+                cat: "III. ACTIVOS BIOLÓGICOS (AVES)",
+                items: [
+                    { id: "aves_viejas", q: "Gallinas Viejas (>60 sem)", type: "number", unit: "Aves" },
+                    { id: "edad_viejas", q: "Edad exacta Viejas", type: "number", unit: "Semanas" },
+                    { id: "aves_nuevas", q: "Gallinas Nuevas (<20 sem)", type: "number", unit: "Aves" },
+                    { id: "edad_nuevas", q: "Edad exacta Nuevas", type: "number", unit: "Semanas" },
+                    { id: "mortalidad", q: "Mortalidad Diaria %", type: "text", unit: "%" },
+                    { id: "clinica", q: "Estado Clínico Visual", type: "radio", opts: [{v:"malo", l:"Decaídas/Pálidas", t:"critico"}, {v:"regular", l:"Disparejo", t:"regular"}, {v:"bueno", l:"Activas/Rojas", t:"optimo"}] }
+                ]
+            },
+            {
+                cat: "IV. INFRAESTRUCTURA",
+                items: [
+                    { id: "galpones_cant", q: "Cantidad Galpones", type: "number", unit: "Unidades" },
+                    { id: "mat_techo", q: "Material Techumbre", type: "radio", opts: [{v:"zinc_mal", l:"Zinc Agujereado", t:"critico"}, {v:"zinc_ok", l:"Zinc Simple", t:"regular"}, {v:"aislado", l:"Con Aislación", t:"optimo"}] },
+                    { id: "pisos", q: "Pisos", type: "radio", opts: [{v:"tierra", l:"Tierra (Sanidad Mal)", t:"critico"}, {v:"radier_reg", l:"Radier Poroso", t:"regular"}, {v:"radier_ok", l:"Radier Lavable", t:"optimo"}] },
+                    { id: "cercos_predio", q: "Cercos Perimetrales", type: "radio", opts: [{v:"abierto", l:"Abierto/Roto", t:"critico"}, {v:"malla", l:"Malla Simple", t:"regular"}, {v:"bulldog", l:"Bulldog/Cimentado", t:"optimo"}] }
+                ]
+            },
+            {
+                cat: "V. EQUIPAMIENTO",
+                items: [
+                    { id: "silos", q: "Silos Alimento", type: "number", unit: "Unidades" },
+                    { id: "alimentacion", q: "Sistema Alimentación", type: "radio", opts: [{v:"manual", l:"Manual (Saco)", t:"critico"}, {v:"carro", l:"Carro Tolva", t:"regular"}, {v:"auto", l:"Automático (Sinfín)", t:"optimo"}] },
+                    { id: "agua_sys", q: "Sistema Bebida", type: "radio", opts: [{v:"canaleta", l:"Canaleta Abierta", t:"critico"}, {v:"copa", l:"Copa", t:"regular"}, {v:"nipple", l:"Nipple", t:"optimo"}] },
+                    { id: "generador", q: "Generador Respaldo", type: "radio", opts: [{v:"no", l:"No tiene", t:"critico"}, {v:"manual", l:"Partida Manual", t:"regular"}, {v:"auto", l:"Automático", t:"optimo"}] }
+                ]
+            },
+            {
+                cat: "VI. RRHH Y COSTOS",
+                items: [
+                    { id: "personal", q: "N° Trabajadores", type: "number", unit: "Personas" },
+                    { id: "sueldo", q: "Sueldo Promedio", type: "number", unit: "CLP Líquido" },
+                    { id: "casas", q: "Casas Internas", type: "number", unit: "Viviendas" },
+                    { id: "luz_gasto", q: "Gasto Luz Mensual", type: "number", unit: "CLP" },
+                    { id: "agua_gasto", q: "Gasto Agua Mensual", type: "number", unit: "CLP" }
+                ]
+            }
+        ];
+
+        let state = {};
+        let activeModel = "gemini-1.5-flash"; // Default seguro
+        let customItems = [];
+
+        // --- 2. RENDERIZADO ---
+        function render() {
+            const container = document.getElementById('main-container');
+            let html = "";
+            protocol.forEach(sec => {
+                html += `<div class="section-header"><span>${sec.cat}</span></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3 mb-8">`;
+                sec.items.forEach(item => {
+                    const uid = item.id;
+                    html += `<div class="card group">
+                        ${item.unit ? `<div class="unit-badge">${item.unit}</div>` : ''}
+                        <label class="block text-xs font-bold text-gray-300 mb-2 uppercase tracking-wide group-hover:text-indigo-300 transition-colors">${item.q}</label>
+                        ${item.type === 'number' ? `<input type="number" placeholder="0" onchange="saveData('${uid}', '${item.q}', this.value)">` : ''}
+                        ${item.type === 'text' ? `<input type="text" placeholder="..." onchange="saveData('${uid}', '${item.q}', this.value)">` : ''}
+                        ${item.type === 'radio' ? `<div class="radio-group">${item.opts.map(o => `
+                            <label class="radio-label"><input type="radio" name="${uid}" value="${o.v}" data-type="${o.t||'regular'}" class="hidden radio-input" onchange="saveData('${uid}', '${item.q}', '${o.l}')"><div class="radio-content">${o.l}</div></label>`).join('')}<label class="radio-label"><input type="radio" name="${uid}" value="na" data-type="na" class="hidden radio-input" onchange="saveData('${uid}', '${item.q}', 'N/A')"><div class="radio-content">N/A</div></label></div>` : ''}
+                        <div class="mt-3 flex justify-between items-center bg-slate-900/50 p-2 rounded border border-slate-700/50">
+                            <label class="cursor-pointer text-[10px] text-gray-400 hover:text-white flex items-center gap-1.5"><span class="text-lg">📷</span> Foto/Video<input type="file" accept="image/*,video/*" class="hidden" onchange="handleMedia(this, '${uid}')"></label>
+                            <div id="preview-${uid}" class="h-10 w-16 rounded bg-black border border-slate-600 flex items-center justify-center overflow-hidden relative"><span class="text-[8px] text-gray-600">Vacío</span></div>
+                        </div></div>`;
+                });
+                html += `</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- 3. ITEMS PERSONALIZADOS ---
+        function addCustomItem() {
+            const container = document.getElementById('main-container');
+            const uid = `custom_${Date.now()}`;
+            const div = document.createElement('div');
+            div.className = "card group border-dashed border-indigo-500/50 bg-indigo-900/10 mb-4";
+            div.innerHTML = `
+                <div class="flex justify-between items-center mb-2"><label class="text-xs font-bold text-indigo-300 uppercase">ITEM EXTRA</label><button onclick="this.parentElement.parentElement.remove()" class="text-red-400 text-lg">×</button></div>
+                <input type="text" placeholder="Descripción (ej: Techo caído)" onchange="saveData('${uid}', this.value, 'OBSERVACION', 'Personalizado')">
+                <div class="radio-group mt-2">
+                    <label class="radio-label"><input type="radio" name="${uid}_s" value="critico" data-type="critico" class="hidden radio-input" onchange="saveData('${uid}_st', 'Estado', 'critico')"><div class="radio-content">MALO</div></label>
+                    <label class="radio-label"><input type="radio" name="${uid}_s" value="regular" data-type="regular" class="hidden radio-input" onchange="saveData('${uid}_st', 'Estado', 'regular')"><div class="radio-content">REGULAR</div></label>
+                    <label class="radio-label"><input type="radio" name="${uid}_s" value="optimo" data-type="optimo" class="hidden radio-input" onchange="saveData('${uid}_st', 'Estado', 'bueno')"><div class="radio-content">BUENO</div></label>
+                </div>`;
+            container.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+            customItems.push({id: uid, q: "Ítem Adicional", val: ""});
+        }
+
+        // --- 4. STATE & MEDIA HANDLER ---
+        function saveData(id, q, val) {
+            if (!state[id]) state[id] = { q: q };
+            state[id].val = val;
+            updateCounters();
+        }
+
+        function handleMedia(input, id) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const previewBox = document.getElementById(`preview-${id}`);
+                previewBox.innerHTML = '<div class="animate-spin h-4 w-4 border-2 border-indigo-500 rounded-full border-t-transparent"></div>';
+
+                if (file.type.startsWith('video')) {
+                    const video = document.createElement('video');
+                    video.src = URL.createObjectURL(file);
+                    video.currentTime = 1.5; video.muted = true;
+                    video.onseeked = () => {
+                        const c = document.createElement('canvas');
+                        c.width = video.videoWidth; c.height = video.videoHeight;
+                        c.getContext('2d').drawImage(video, 0, 0);
+                        const s = 800 / Math.max(c.width, c.height);
+                        const fc = document.createElement('canvas');
+                        fc.width = c.width * s; fc.height = c.height * s;
+                        fc.getContext('2d').drawImage(c, 0, 0, fc.width, fc.height);
+                        const b64 = fc.toDataURL('image/jpeg', 0.6);
+                        if(!state[id]) state[id]={}; state[id].img = b64.split(',')[1];
+                        previewBox.innerHTML = `<img src="${b64}" class="w-full h-full object-cover">`;
+                        document.getElementById('video-indicator').classList.remove('hidden');
+                        URL.revokeObjectURL(video.src);
+                        updateCounters();
+                    };
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        const img = new Image(); img.src = e.target.result;
+                        img.onload = () => {
+                            const c = document.createElement('canvas');
+                            const s = 800/Math.max(img.width, img.height);
+                            c.width = img.width*s; c.height = img.height*s;
+                            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                            const b64 = c.toDataURL('image/jpeg', 0.6);
+                            if(!state[id]) state[id]={}; state[id].img = b64.split(',')[1];
+                            previewBox.innerHTML = `<img src="${b64}" class="w-full h-full object-cover">`;
+                            updateCounters();
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        // --- SAFE UPDATE COUNTERS ---
+        function updateCounters() {
+            const dataEl = document.getElementById('count-data');
+            if (dataEl) dataEl.innerText = Object.values(state).filter(i => i.val).length;
+            const imgEl = document.getElementById('count-img');
+            if (imgEl) imgEl.innerText = Object.values(state).filter(i => i.img).length;
+            const naEl = document.getElementById('count-na');
+            if (naEl) naEl.innerText = Object.values(state).filter(i => i.val === 'na' || i.val === 'N/A').length;
+        }
+
+        // --- 5. CONEXIÓN API AUTO-DETECT ---
+        async function testConnection() {
+            const key = document.getElementById('apiKey').value;
+            const status = document.getElementById('modelStatus');
+            const btn = document.getElementById('btnTest');
+            btn.innerText = "...";
+            try {
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                if (!r.ok) throw new Error("Key Inválida");
+                const data = await r.json();
+                const usable = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent") && !m.name.includes("vision"));
+                if (usable.length === 0) throw new Error("Sin acceso");
+                activeModel = usable[0].name.replace("models/", ""); // Tomar el primero disponible
+                status.innerText = `OK: ${activeModel}`; status.className="text-[10px] text-emerald-400 font-bold";
+                btn.innerText = "CONECTADO"; btn.classList.add("bg-emerald-700");
+                document.getElementById('btnAnalyze').disabled = false;
+                document.getElementById('btnAnalyze').classList.remove("grayscale");
+            } catch (e) {
+                status.innerText = "Error Key"; status.className="text-[10px] text-red-400";
+            }
+        }
+
+        // --- 6. ANÁLISIS MULTI-INTENTO ---
+        async function analizarConIA() {
+            const key = document.getElementById('apiKey').value;
+            const modal = document.getElementById('modalReport');
+            const content = document.getElementById('reportContent');
+            const loader = document.getElementById('loader');
+            const debug = document.getElementById('debugConsole');
+            const name = document.getElementById('project_name').value;
+            const price = document.getElementById('project_price').value;
+
+            modal.classList.remove('hidden'); loader.classList.remove('hidden'); content.classList.add('hidden');
+            debug.innerText = "Recopilando datos...\n";
+
+            let findings = Object.keys(state).map(k => `- ${state[k].q || k}: ${state[k].val}`).join('\n');
+            const images = [];
+            let c = 0;
+            for(let k in state) { if(state[k].img && c < 4) { images.push({ inlineData: { mimeType: "image/jpeg", data: state[k].img } }); c++; } }
+            debug.innerText += `> Enviando ${c} imágenes...\n`;
+
+            const prompt = `
+                ROL: Auditor Veterinario Experto.
+                AUDITORÍA: "${name}" (Precio: ${price}).
+                
+                --- DATOS CHILE 2026 ---
+                - Galpón Tecnificado: $120.000/m².
+                - Silo 14 ton: $5.200.000.
+                - Multa Pozo Ilegal: 1000 UTM.
+                
+                --- HALLAZGOS ---
+                ${findings || "Sin datos."}
+
+                GENERA INFORME MARKDOWN:
+                1. Semáforo Legal (RUP, PABCO, Aguas).
+                2. Diagnóstico Veterinario (Salud Aves, Manejo Guano/Fosa).
+                3. Análisis Financiero (Valor Activos vs Precio).
+                4. CAPEX Modernización.
+                5. VEREDICTO FINAL.
+            `;
+
+            // Estrategia Cascada
+            const models = [activeModel, 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro'];
+            let success = false;
+
+            for (const m of models) {
+                if(!m) continue;
+                try {
+                    debug.innerText += `> Probando ${m}...\n`;
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, ...images] }] })
+                    });
+                    if (r.ok) {
+                        const d = await r.json();
+                        content.innerHTML = marked.parse(d.candidates[0].content.parts[0].text);
+                        loader.classList.add('hidden'); content.classList.remove('hidden');
+                        success = true; break;
+                    }
+                } catch(e) { debug.innerText += `> Falló ${m}\n`; }
+            }
+
+            if (!success) {
+                document.getElementById('loaderText').innerText = "Fallo Total.";
+                content.innerHTML = `<div class="p-4 bg-red-900/50 text-white rounded">No se pudo conectar. Verifica tu API Key.</div>`;
+                loader.classList.add('hidden'); content.classList.remove('hidden');
+            }
+        }
+
+        // --- 7. PDF MIRROR EXACTO ---
+        function generarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 25, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.text("PROTOCOLO AUDITORÍA AVÍCOLA", 105, 12, {align:'center'});
+            doc.setFontSize(10); doc.text(`Predio: ${document.getElementById('project_name').value}`, 105, 19, {align:'center'});
+            
+            let y = 35;
+            protocol.forEach(sec => {
+                if (y > 270) { doc.addPage(); y = 20; }
+                doc.setFillColor(230); doc.rect(14, y-6, 182, 8, 'F');
+                doc.setTextColor(0); doc.setFont(undefined, 'bold'); doc.text(sec.cat, 16, y-1); y += 6;
+                doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+                sec.items.forEach(i => {
+                    let optLine = i.type === 'radio' ? i.opts.map(o => `[ ] ${o.l}`).join("   ") : `_______ ${i.unit||''}`;
+                    doc.text(`• ${i.q}`, 14, y); y += 5;
+                    doc.setFont(undefined, 'italic'); doc.setTextColor(100); doc.text("   " + optLine, 14, y); 
+                    doc.setTextColor(0); doc.setFont(undefined, 'normal'); y += 7;
+                });
+                y += 5;
+            });
+            
+            // Items personalizados
+            if (customItems.length > 0) {
+                if (y > 260) { doc.addPage(); y = 20; }
+                doc.setFont(undefined, 'bold'); doc.text("OBSERVACIONES ADICIONALES", 16, y); y += 6;
+                customItems.forEach(i => { doc.text("____________________________________________________", 14, y); y += 8; });
+            }
+            doc.save("Checklist_Campo.pdf");
+        }
+
+        function cerrarModal() { document.getElementById('modalReport').classList.add('hidden'); }
+        async function exportarReportePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const text = document.getElementById('reportContent').innerText;
+            const lines = doc.splitTextToSize(text, 180);
+            let y = 20; doc.setFontSize(10);
+            lines.forEach(l => { if(y>280){doc.addPage(); y=20;} doc.text(l, 10, y); y+=5; });
+            doc.save("Informe_Final.pdf");
+        }
+
+        render();
+        if(document.getElementById('apiKey').value) setTimeout(testConnection, 500);
+
+    </script>
+</body>
+</html>
