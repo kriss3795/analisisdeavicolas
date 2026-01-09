@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoría Avícola Universal V18.1</title>
+    <title>Auditoría Avícola Universal V19: Visual Evidence</title>
     <!-- Librerías -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -95,13 +95,13 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h1 class="text-xl font-bold text-blue-400 flex items-center gap-2">
-                    🧬 Auditoría Universal <span class="text-[10px] bg-blue-900 px-2 rounded text-blue-200 border border-blue-700">V18.1</span>
+                    🧬 Auditoría Universal <span class="text-[10px] bg-blue-900 px-2 rounded text-blue-200 border border-blue-700">V19.0</span>
                 </h1>
             </div>
             <div class="flex gap-2 items-center bg-slate-900 p-1.5 rounded-lg border border-slate-700 w-full md:w-auto">
                 <input type="password" id="apiKey" class="bg-transparent border-none text-xs text-white w-24 md:w-48 focus:ring-0 placeholder-gray-500" value="AIzaSyC0hQgaCTxf9k1bTIfhNhWHuM1Q5M3Olvc" placeholder="Pegar API Key">
                 <button onclick="testConnection()" id="btnTest" class="bg-slate-700 hover:bg-slate-600 text-[10px] text-white px-3 py-1 rounded font-bold whitespace-nowrap transition-colors">CONECTAR</button>
-                <div id="modelStatus" class="text-[10px] text-gray-500 font-mono w-3 h-3 rounded-full bg-gray-800 border border-gray-600" title="Estado"></div>
+                <div id="modelStatus" class="text-[10px] text-gray-500 font-mono w-3 h-3 rounded-full bg-gray-700" title="Estado"></div>
             </div>
         </div>
     </nav>
@@ -146,14 +146,14 @@
     <!-- ZONA DE CARGA MASIVA DE EVIDENCIA -->
     <div class="max-w-7xl mx-auto px-4 mb-8">
         <div class="section-header mb-4">
-            <span>🗂️ Evidencia General (Carga Masiva)</span>
+            <span>🗂️ Evidencia Visual (Carga Masiva)</span>
         </div>
         <div class="upload-zone rounded-xl p-8 text-center cursor-pointer relative" id="bulk-upload-zone">
             <input type="file" id="bulk-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" multiple accept="image/*,video/*" onchange="handleBulkMedia(this)">
             <div class="pointer-events-none">
                 <span class="text-4xl block mb-2">📸 🎥</span>
-                <h3 class="text-white font-bold text-lg">Toca aquí para subir todo junto</h3>
-                <p class="text-gray-400 text-sm mt-1">Selecciona múltiples fotos y videos de una sola vez. Cantidad indefinida.</p>
+                <h3 class="text-white font-bold text-lg">Subir Fotos y Videos del Recorrido</h3>
+                <p class="text-gray-400 text-sm mt-1">Sube todo aquí. La IA analizará hasta 15 archivos simultáneamente para buscar patrones.</p>
             </div>
         </div>
         <!-- Galería de visualización -->
@@ -165,7 +165,7 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="hidden md:flex gap-6 text-[10px] text-gray-400 font-mono uppercase tracking-widest">
                 <span>Datos: <b id="count-data" class="text-blue-400">0</b></span>
-                <span>Archivos: <b id="count-img" class="text-emerald-400">0</b></span>
+                <span>Archivos (IA): <b id="count-img" class="text-emerald-400">0</b></span>
                 <span>N/A: <b id="count-na" class="text-gray-500">0</b></span>
             </div>
             
@@ -174,7 +174,7 @@
                     <span>📄</span> CHECKLIST PDF
                 </button>
                 <button onclick="analizarConIA()" id="btnAnalyze" class="flex-1 md:flex-none bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 text-white font-bold py-2 px-8 rounded shadow-lg shadow-indigo-900/50 flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale transition-all transform active:scale-95" disabled>
-                    <span>⚡</span> AUDITAR
+                    <span>⚡</span> AUDITAR Y VALORIZAR
                 </button>
             </div>
         </div>
@@ -203,7 +203,7 @@
                     <div class="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
                     <div class="absolute inset-0 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <p class="text-indigo-400 mt-6 text-sm font-mono animate-pulse uppercase tracking-widest" id="loaderText">Procesando Lote de Archivos...</p>
+                <p class="text-indigo-400 mt-6 text-sm font-mono animate-pulse uppercase tracking-widest" id="loaderText">Analizando Imágenes y Datos...</p>
                 <div id="debugConsole" class="mt-6 bg-black p-3 rounded text-[10px] text-green-500 font-mono w-full max-w-lg h-32 overflow-y-auto border border-gray-800 opacity-90"></div>
             </div>
 
@@ -230,7 +230,6 @@
             {
                 cat: "II. BIOSEGURIDAD Y ESTATUS SANITARIO",
                 items: [
-                    // PABCO MOVIDO AQUÍ Y RECLASIFICADO
                     { id: "pabco", q: "Certificación PABCO (SAG)", type: "radio", opts: [{v:"no", l:"No tiene (Estándar)", t:"regular"}, {v:"tramite", l:"En Proceso", t:"regular"}, {v:"si", l:"Sí (Plus Export)", t:"optimo"}] },
                     { id: "vacunas", q: "Registro Vacunas", type: "radio", opts: [{v:"no", l:"Sin registro", t:"critico"}, {v:"incompleto", l:"Incompleto", t:"malo"}, {v:"al_dia", l:"Al Día/Trazable", t:"optimo"}] },
                     { id: "fosa", q: "Fosa de Mortalidad", type: "radio", opts: [{v:"no", l:"No tiene (Ilegal)", t:"critico"}, {v:"saturada", l:"Llena/Saturada", t:"malo"}, {v:"ok", l:"Autorizada/Operativa", t:"optimo"}] },
@@ -260,10 +259,9 @@
             {
                 cat: "V. EQUIPAMIENTO",
                 items: [
-                    { id: "silos", q: "Silos Alimento", type: "number", unit: "Unidades" },
-                    { id: "alimentacion", q: "Sistema Alimentación", type: "radio", opts: [{v:"manual", l:"Manual (Saco)", t:"critico"}, {v:"carro", l:"Carro Tolva", t:"regular"}, {v:"auto", l:"Automático (Sinfín)", t:"optimo"}] },
-                    { id: "agua_sys", q: "Sistema Bebida", type: "radio", opts: [{v:"canaleta", l:"Canaleta Abierta", t:"critico"}, {v:"copa", l:"Copa", t:"regular"}, {v:"nipple", l:"Nipple", t:"optimo"}] },
-                    { id: "generador", q: "Generador Respaldo", type: "radio", opts: [{v:"no", l:"No tiene", t:"critico"}, {v:"manual", l:"Partida Manual", t:"regular"}, {v:"auto", l:"Automático", t:"optimo"}] }
+                    { id: "silos", q: "Capacidad Silos", type: "number", unit: "Toneladas" },
+                    { id: "alimentacion", q: "Sistema Alimentación", type: "radio", opts: [{v:"manual", l:"Manual (Saco)", t:"critico"}, {v:"auto", l:"Automático (Sinfín)", t:"optimo"}] },
+                    { id: "bebederos", q: "Sistema Agua", type: "radio", opts: [{v:"canaleta", l:"Canaleta Abierta", t:"critico"}, {v:"nipple", l:"Nipple", t:"optimo"}] }
                 ]
             },
             {
@@ -329,20 +327,18 @@
             updateCounters();
         }
 
-        // --- MANEJO DE CARGA MASIVA (NUEVO) ---
+        // --- MANEJO DE CARGA MASIVA ---
         function handleBulkMedia(input) {
             const files = Array.from(input.files);
             const gallery = document.getElementById('bulk-gallery');
             
             files.forEach(file => {
                 const reader = new FileReader();
-                // Placeholder visual
                 const thumb = document.createElement('div');
                 thumb.className = "h-16 w-full bg-slate-800 rounded border border-slate-700 animate-pulse";
                 gallery.appendChild(thumb);
 
                 if (file.type.startsWith('video')) {
-                    // Extraer frame de video
                     const video = document.createElement('video');
                     video.src = URL.createObjectURL(file);
                     video.currentTime = 1.5;
@@ -350,7 +346,6 @@
                         const c = document.createElement('canvas');
                         c.width = video.videoWidth; c.height = video.videoHeight;
                         c.getContext('2d').drawImage(video, 0, 0);
-                        // Resize
                         const s = 800/Math.max(c.width, c.height);
                         const fc = document.createElement('canvas');
                         fc.width = c.width*s; fc.height = c.height*s;
@@ -365,7 +360,6 @@
                         updateCounters();
                     };
                 } else {
-                    // Procesar imagen
                     reader.onload = e => {
                         const img = new Image(); img.src = e.target.result;
                         img.onload = () => {
@@ -390,7 +384,7 @@
             const dataEl = document.getElementById('count-data');
             if (dataEl) dataEl.innerText = Object.values(state).filter(i => i.val).length;
             const imgEl = document.getElementById('count-img');
-            if (imgEl) imgEl.innerText = globalMedia.length; // Usamos el array global
+            if (imgEl) imgEl.innerText = globalMedia.length;
             const naEl = document.getElementById('count-na');
             if (naEl) naEl.innerText = Object.values(state).filter(i => i.val === 'na' || i.val === 'N/A').length;
         }
@@ -432,10 +426,28 @@
 
             let findings = Object.keys(state).map(k => `- ${state[k].q || k}: ${state[k].val}`).join('\n');
             
-            // Adjuntar imágenes del array global (max 15 para no reventar payload, priorizar primeras)
-            const imagesPayload = globalMedia.slice(0, 15).map(m => ({ inlineData: { mimeType: m.mimeType, data: m.data } }));
+            // Recopilar Imágenes (Prioridad: Específicas > Bulk)
+            const images = [];
+            let imgCount = 0;
+            const MAX_IMGS = 15; // Aumentar límite si el modelo lo permite, Flash aguanta hartas
+
+            // 1. Imágenes específicas por ítem
+            for(let k in state) {
+                if(state[k].img && imgCount < MAX_IMGS) {
+                    images.push({ inlineData: { mimeType: "image/jpeg", data: state[k].img } });
+                    imgCount++;
+                }
+            }
+
+            // 2. Imágenes Bulk (Global)
+            for(let m of globalMedia) {
+                if(imgCount < MAX_IMGS) {
+                    images.push({ inlineData: { mimeType: m.mimeType, data: m.data } });
+                    imgCount++;
+                }
+            }
             
-            debug.innerText += `> Enviando ${imagesPayload.length} evidencias visuales...\n`;
+            debug.innerText += `> Enviando ${imgCount} evidencias visuales...\n`;
 
             const prompt = `
                 ROL: Auditor Veterinario Experto.
@@ -450,6 +462,8 @@
                 ${findings || "Sin datos."}
 
                 GENERA INFORME MARKDOWN:
+                IMPORTANTE: Tienes acceso a imágenes. Tu primera tarea es crear un apartado llamado 'EVIDENCIA VISUAL' donde describas qué ves en las fotos. Si ves óxido, descríbelo. Si ves aves, describe su estado. Si no ves fotos, indícalo claramente.
+
                 1. Semáforo Legal (RUP, PABCO, Aguas). PABCO es Voluntario (Standard Domestic), RUP es CRÍTICO.
                 2. Diagnóstico Veterinario (Salud Aves, Manejo Guano/Fosa).
                 3. Análisis Financiero (Valor Activos vs Precio).
@@ -468,7 +482,7 @@
                     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, ...imagesPayload] }] })
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, ...images] }] })
                     });
                     if (r.ok) {
                         const d = await r.json();
